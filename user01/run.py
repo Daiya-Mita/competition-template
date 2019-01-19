@@ -83,6 +83,4 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
         '{0}/oof.csv'.format(folder_path),
     )
 
-output(train_df, test_df, models,
-       model_params, feature_importance_df, train_preds,
-       test_preds, scores, model_name)
+output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name)
