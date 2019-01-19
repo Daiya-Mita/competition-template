@@ -1,5 +1,5 @@
 import inspect
-import feather
+# import feather
 import pandas as pd
 import re
 from abc import ABCMeta, abstractmethod
@@ -16,8 +16,8 @@ def get_features(namespace):  # 特徴量クラスのみを抽出する関数
 
 def generate_features(namespace):
     for f in get_features(namespace):
-        if f.train_path.exists() and f.test_path.exists():
         # if f.df_path.exists() and not overwrite:
+        if f.train_path.exists() and f.test_path.exists():
             print(f.name, 'was skipped')
         else:
             f.run().save()

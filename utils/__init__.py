@@ -5,7 +5,6 @@ import feather
 import requests
 import matplotlib.pyplot as plt
 import seaborn as sns
-import re
 import os
 from contextlib import contextmanager
 import pickle
@@ -59,14 +58,14 @@ def one_hot_encoder(df, nan_as_category=True):
     return df, new_cols
 
 
-def load_datasets(features_path):
+def load_datasets(feature_path):
     # dfs = [pd.read_feather(f'features/{f}_train.feather') for f in feats]
-    train_features = [f for f in os.listdir(features_path) if f[-13:] == 'train.feather']
-    dfs = [feather.read_dataframe(features_path+'/'+f) for f in train_features]
+    feats = [f for f in os.listdir(feature_path) if f[-13:] == 'train.feather']
+    dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
     train = pd.concat(dfs, axis=1)
     # dfs = [pd.read_feather(f'features/{f}_test.feather') for f in feats]
-    test_features = [f for f in os.listdir(features_path) if f[-12:] == 'test.feather']
-    dfs = [feather.read_dataframe(features_path+'/'+f) for f in test_features]
+    feats = [f for f in os.listdir(feature_path) if f[-12:] == 'test.feather']
+    dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
     test = pd.concat(dfs, axis=1)
     return train, test
 
@@ -79,18 +78,23 @@ def line_notify(message):
     line_notify_api = 'https://notify-api.line.me/api/notify'
     payload = {'message': message}
     headers = {'Authorization': 'Bearer ' + line_notify_token}  # 発行したトークン
-    line_notify = requests.post(line_notify_api, data=payload, headers=headers)
+    requests.post(line_notify_api, data=payload, headers=headers)
     print(message)
 
-# API経由でsubmitする機能 https://github.com/KazukiOnodera/Home-Credit-Default-Risk/blob/master/py/utils.py
+
+# https://github.com/KazukiOnodera/Home-Credit-Default-Risk/blob/master/py/utils.py
 def submit(competition_name, file_path, comment='from API'):
-    os.system('kaggle competitions submit -c {} -f {} -m "{}"'.format(competition_name,file_path,comment))
-    time.sleep(60) # tekito~~~~
-    tmp = os.popen('kaggle competitions submissions -c {} -v | head -n 2'.format(competition_name)).read()
+    os.system(
+        'kaggle competitions submit -c {} -f {} -m "{}"'
+        .format(competition_name, file_path, comment))
+    time.sleep(60)  # tekito~~~~
+    tmp = os.popen(
+        'kaggle competitions submissions -c {} -v | head -n 2'
+        .format(competition_name)).read()
     col, values = tmp.strip().split('\n')
     message = 'SCORE!!!\n'
-    for i,j in zip(col.split(','), values.split(',')):
-        message += '{}: {}\n'.format(i,j)
+    for i, j in zip(col.split(','), values.split(',')):
+        message += '{}: {}\n'.format(i, j)
 #        print(f'{i}: {j}') # TODO: comment out later?
     line_notify(message.rstrip())
 
@@ -152,15 +156,21 @@ def reduce_mem_usage(df, verbose=True):
 
 # Display/plot feature importance
 def display_importances(feature_importance_df_, outputpath, csv_outputpath):
-    cols = feature_importance_df_[["feature", "importance"]].groupby("feature").mean().sort_values(by="importance", ascending=False)[:40].index
-    best_features = feature_importance_df_.loc[feature_importance_df_.feature.isin(cols)]
+    cols = feature_importance_df_[["feature", "importance"]]\
+        .groupby("feature").mean()\
+        .sort_values(by="importance", ascending=False)[:40].index
+    best_features = feature_importance_df_\
+        .loc[feature_importance_df_.feature.isin(cols)]
 
     # importance下位の確認用に追加しました
-    _feature_importance_df_=feature_importance_df_.groupby('feature').sum()
+    _feature_importance_df_ = feature_importance_df_.groupby('feature').sum()
     _feature_importance_df_.to_csv(csv_outputpath)
 
     plt.figure(figsize=(8, 10))
-    sns.barplot(x="importance", y="feature", data=best_features.sort_values(by="importance", ascending=False))
+    sns.barplot(
+        x="importance",
+        y="feature",
+        data=best_features.sort_values(by="importance", ascending=False))
     plt.title('LightGBM Features (avg over folds)')
     plt.tight_layout()
     plt.savefig(outputpath)
@@ -169,7 +179,7 @@ def display_importances(feature_importance_df_, outputpath, csv_outputpath):
 def make_output_dir(score):
     path = '../data/output/'
     folders = []
-    for x in os.listdir(path):  
+    for x in os.listdir(path):
         if os.path.isdir(path + x):
             folders.append(x)
     if folders == []:
