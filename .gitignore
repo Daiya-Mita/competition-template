@@ -8,4 +8,4 @@ data/input/*.zip
 data/input/*.feather
 data/output/
 */__pycache__
-user01/models/__pycache__/*
+*/*/__pycache__
