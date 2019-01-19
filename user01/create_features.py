@@ -6,18 +6,18 @@ import gc
 from workalendar.america import Brazil
 import os
 import sys
+this_folder = '/user01'
 cwd = os.getcwd()
-sys.path.append(cwd.replace('/user01', ''))
-from utils import one_hot_encoder
-sys.path.append(cwd.replace('/user01', '/src'))
-from feature_base import Feature, get_arguments, generate_features
-
+sys.path.append(cwd.replace(this_folder, ''))
+from utils import one_hot_encoder, load_datasets
+sys.path.append(cwd.replace(this_folder, '/src'))
+from feature_base import Feature, generate_features
 
 # featureの格納場所はfeatures
 Feature.dir = '../features'
 
 
-class Train_test(Feature):
+class Traintest(Feature):
     def create_features(self):
         # load csv
         # train_df = pd.read_csv('../input/train.csv', index_col=['card_id'], nrows=num_rows)
@@ -76,8 +76,12 @@ class Train_test(Feature):
         df['feature_var'] = df[['feature_1', 'feature_2', 'feature_3']].std(axis=1)
         df['feature_skew'] = df[['feature_1', 'feature_2', 'feature_3']].skew(axis=1)
 
-        df = df.reset_index()
-        self.df = df
+        # df = df.reset_index()
+        # self.df = df
+        train_df = df[df['target'].notnull()]
+        test_df = df[df['target'].isnull()]
+        self.train = train_df.reset_index()
+        self.test = test_df.reset_index()
 
 
 class Historical_transactions(Feature):
@@ -194,9 +198,23 @@ class Historical_transactions(Feature):
         hist_df['hist_purchase_date_uptonow'] = (datetime.datetime.today()-hist_df['hist_purchase_date_max']).dt.days
         hist_df['hist_purchase_date_uptomin'] = (datetime.datetime.today()-hist_df['hist_purchase_date_min']).dt.days
 
-        hist_df = hist_df.reset_index()
+        #hist_df = hist_df.reset_index()
 
-        self.df = hist_df
+        train_df = feather.read_dataframe('../features/traintest_train.feather')
+        test_df = feather.read_dataframe('../features/traintest_test.feather')
+        df = pd.concat([train_df, test_df], axis=0)
+        init_cols = df.columns
+        hist_df = pd.merge(df, hist_df, on='card_id', how='outer')
+
+        hist_df_train = hist_df[hist_df['target'].notnull()]
+        hist_df_test = hist_df[hist_df['target'].isnull()]
+
+        hist_df_train = hist_df_train.drop(init_cols, axis=1)
+        hist_df_test = hist_df_test.drop(init_cols, axis=1)
+
+        #self.df = hist_df
+        self.train = hist_df_train.reset_index(drop=True)
+        self.test = hist_df_test.reset_index(drop=True)
 
 
 class New_merchant_transactions(Feature):
@@ -317,23 +335,31 @@ class New_merchant_transactions(Feature):
         # memory usage削減
         #new_merchant_df = reduce_mem_usage(new_merchant_df)
 
-        new_merchant_df = new_merchant_df.reset_index()
+        #new_merchant_df = new_merchant_df.reset_index()
 
-        self.df = new_merchant_df
+        train_df = feather.read_dataframe('../features/traintest_train.feather')
+        test_df = feather.read_dataframe('../features/traintest_test.feather')
+        df = pd.concat([train_df, test_df], axis=0)
+        init_cols = df.columns
+        new_merchant_df = pd.merge(df, new_merchant_df, on='card_id', how='outer')
 
+        new_merchant_df_train = new_merchant_df[new_merchant_df['target'].notnull()]
+        new_merchant_df_test = new_merchant_df[new_merchant_df['target'].isnull()]
 
-def load_all():
-    df = feather.read_dataframe('../features/train_test_df.feather')
-    hist_df = feather.read_dataframe('./features/historical_transactions_df.feather')
-    df = pd.merge(df, hist_df, on='card_id', how='outer')
-    new_merchant_df =feather.read_dataframe('./features/new_merchant_transactions_df.feather')
-    df = pd.merge(df, new_merchant_df, on='card_id', how='outer')
-    return df
+        new_merchant_df_train = new_merchant_df_train.drop(init_cols, axis=1)
+        new_merchant_df_test = new_merchant_df_test.drop(init_cols, axis=1)
+
+        self.train = new_merchant_df_train.reset_index(drop=True)
+        self.test = new_merchant_df_test.reset_index(drop=True)
 
 
 class Additional_features(Feature):
     def create_features(self):
-        df = load_all()
+        #df = load_all()
+        path = cwd.replace(this_folder,'/features')
+        df_1, df_2 = load_datasets(path)
+        df = pd.concat([df_1, df_2], axis=0)
+        init_cols = df.columns
         df['hist_first_buy'] = (df['hist_purchase_date_min'] - df['first_active_month']).dt.days
         df['hist_last_buy'] = (df['hist_purchase_date_max'] - df['first_active_month']).dt.days
         df['new_first_buy'] = (df['new_purchase_date_min'] - df['first_active_month']).dt.days
@@ -387,9 +413,15 @@ class Additional_features(Feature):
         df['hist_CLV'] = df['hist_card_id_count'] * df['hist_purchase_amount_sum'] / df['hist_month_diff_mean']
         df['CLV_ratio'] = df['new_CLV'] / df['hist_CLV']
 
-        self.df = df
+        train_df = df[df['target'].notnull()]
+        test_df = df[df['target'].isnull()]
+
+        train_df = train_df.drop(init_cols, axis=1)
+        test_df = test_df.drop(init_cols, axis=1)
+
+        self.train = train_df
+        self.test = test_df
 
 
 if __name__ == '__main__':
-    args = get_arguments()
-    generate_features(globals(), args.force)
+    generate_features(globals())

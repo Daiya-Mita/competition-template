@@ -1,4 +1,3 @@
-import argparse
 import inspect
 import feather
 import pandas as pd
@@ -8,14 +7,6 @@ from pathlib import Path
 from utils import timer
 
 
-def get_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--force', '-f', action='store_true', help='Overwrite existing files'
-    )
-    return parser.parse_args()
-
-
 def get_features(namespace):  # 特徴量クラスのみを抽出する関数
     for k, v in namespace.items():
         if inspect.isclass(v) and issubclass(v, Feature) \
@@ -23,10 +14,10 @@ def get_features(namespace):  # 特徴量クラスのみを抽出する関数
             yield v()
 
 
-def generate_features(namespace, overwrite):
+def generate_features(namespace):
     for f in get_features(namespace):
-        # if f.train_path.exists() and f.test_path.exists() and not overwrite:
-        if f.df_path.exists() and not overwrite:
+        if f.train_path.exists() and f.test_path.exists():
+        # if f.df_path.exists() and not overwrite:
             print(f.name, 'was skipped')
         else:
             f.run().save()
@@ -46,21 +37,21 @@ class Feature(metaclass=ABCMeta):
                 lambda x: "_" + x.group(1).lower(), self.__class__.__name__
             ).lstrip('_')
 
-        # self.train = pd.DataFrame()
-        # self.test = pd.DataFrame()
-        self.df = pd.DataFrame()
-        # self.train_path = Path(self.dir) / f'{self.name}_train.feather'
-        # self.test_path = Path(self.dir) / f'{self.name}_test.feather'
-        self.df_path = Path(self.dir) / f'{self.name}_df.feather'
+        self.train = pd.DataFrame()
+        self.test = pd.DataFrame()
+        # self.df = pd.DataFrame()
+        self.train_path = Path(self.dir) / f'{self.name}_train.feather'
+        self.test_path = Path(self.dir) / f'{self.name}_test.feather'
+        # self.df_path = Path(self.dir) / f'{self.name}_df.feather'
 
     def run(self):
         with timer(self.name):
             self.create_features()
             prefix = self.prefix + '_' if self.prefix else ''
             suffix = '_' + self.suffix if self.suffix else ''
-            # self.train.columns = prefix + self.train.columns + suffix
-            # self.test.columns = prefix + self.test.columns + suffix
-            self.df.columns = prefix + self.df.columns + suffix
+            self.train.columns = prefix + self.train.columns + suffix
+            self.test.columns = prefix + self.test.columns + suffix
+            # self.df.columns = prefix + self.df.columns + suffix
         return self
 
     @abstractmethod
@@ -68,11 +59,11 @@ class Feature(metaclass=ABCMeta):
         raise NotImplementedError
 
     def save(self):
-        # self.train.to_feather(str(self.train_path))
-        # self.test.to_feather(str(self.test_path))
-        self.df.to_feather(str(self.df_path))
+        self.train.to_feather(str(self.train_path))
+        self.test.to_feather(str(self.test_path))
+        # self.df.to_feather(str(self.df_path))
 
     def load(self):
-        # self.train = pd.read_feather(str(self.train_path))
-        # self.test = pd.read_feather(str(self.test_path))
-        self.df = feather.read_dataframe(str(self.df_path))
+        self.train = pd.read_feather(str(self.train_path))
+        self.test = pd.read_feather(str(self.test_path))
+        # self.df = feather.read_dataframe(str(self.df_path))

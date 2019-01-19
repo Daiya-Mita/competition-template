@@ -8,21 +8,17 @@
 │   │   ├── *.csv
 │   │   └── *.feather
 │   └── output
-│       └── submit_*.csv
 ├── features
 │   └── *.feather
 ├── logs
 │   └── *.log
-├── models
-│   ├── *.json
-│   └── *.model
 ├── notebook
 │   └── *.ipynb
 ├── src
 │   └── features_base.py
 ├── user01
 │   ├── create_features.py
-│   ├── lgbm_Classifier.py
+│   ├── kfold_lgbm.py
 │   └── run.py
 └── utils
     └── __init__.py
@@ -38,7 +34,8 @@ python convert_to_feather.py
 ```
 python create_features.py
 ```
-実行するのは, 以下のみ.
+学習モデルの中身は kfold_lgbm.py の中をいじってみてください.
+全体を実行するのは, 以下のみ(この中から上記の create_features.py をkickすることも可能).
 ```
 python run.py
 ```

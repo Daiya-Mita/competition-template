@@ -6,7 +6,7 @@ data/input/*.csv
 data/input/*.xlsx
 data/input/*.zip
 data/input/*.feather
-data/output/*.csv
+data/output/
 */__pycache__
 models/*.json
 models/*.pkl
