@@ -14,9 +14,14 @@ from lightgbm.callback import _format_eval_result
 from sklearn.metrics import mean_squared_error
 
 
-def log_best(model, metric):
+def log_best_lgbm(model, metric):
     logging.debug(model.best_iteration)
     logging.debug(model.best_score['valid'][metric])
+
+
+def log_best_xgb(model, metric):
+    logging.debug(model.best_iteration)
+    logging.debug(model.best_score)
 
 
 def log_evaluation(logger, period=1, show_stdv=True, level=logging.DEBUG):

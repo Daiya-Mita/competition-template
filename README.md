@@ -8,6 +8,7 @@
 │   │   ├── *.csv
 │   │   └── *.feather
 │   └── output
+│   │   └── *
 ├── features
 │   └── *.feather
 ├── logs
@@ -18,7 +19,9 @@
 │   └── features_base.py
 ├── user01
 │   ├── create_features.py
-│   ├── kfold_lgbm.py
+│   ├── models
+│   │   ├── kfold_lgbm.py
+│   │   └── kfold_xgb.py
 │   └── run.py
 └── utils
     └── __init__.py
@@ -39,3 +42,7 @@ python create_features.py
 ```
 python run.py
 ```
+
+# TODO
+utils の make_output_dir の作りが適当（変な名前なフォルダがあると死ぬ）  
+create_features.py にデバッグ機能を追加したい

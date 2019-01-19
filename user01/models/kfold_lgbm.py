@@ -8,10 +8,10 @@ import numpy as np
 import os
 import gc
 import sys
-this_folder = '/user01'
+this_folder = '/user01/models'
 cwd = os.getcwd()
 sys.path.append(cwd.replace(this_folder, ''))
-from utils import log_evaluation, log_best
+from utils import log_evaluation, log_best_lgbm
 
 
 # LightGBM GBDT with KFold or Stratified KFold
@@ -32,6 +32,7 @@ def kfold_lightgbm(train_df, test_df, model_loss, num_folds, feats_exclude, stra
 
     models = []
     model_params = {}
+    scores = []
 
     # k-fold
     for n_fold, (train_idx, valid_idx) in enumerate(folds.split(train_df[feats], train_df['outliers'])):
@@ -99,41 +100,7 @@ def kfold_lightgbm(train_df, test_df, model_loss, num_folds, feats_exclude, stra
         fold_importance_df["fold"] = n_fold + 1
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
         logging.debug('Fold_{}_best'.format(n_fold))
-        log_best(model, model_loss)
-        #print('Fold %2d RMSE : %.6f' % (n_fold + 1, rmse(valid_y, train_preds[valid_idx])))
-        #logging.debug('Fold %2d RMSE : %.6f' % (n_fold + 1, rmse(valid_y, train_preds[valid_idx])))
+        log_best_lgbm(model, model_loss)
+        scores.append(model.best_score['valid'][model_loss])
 
-    #full_rmse = rmse(train_df['target'], train_preds)
-    #logging.debug('Full RMSE score {}'.format(full_rmse))
-
-
-    # line_notify('Full RMSE score %.6f' % full_rmse)
-
-    # display_importances(feature_importance_df,
-    #                    '../models/lgbm_importances.png',
-    #                    '../models/feature_importance_lgbm.csv')
-    return models, model_params, feature_importance_df, test_preds
-
-""" 以下はモデルの外側で実装
-
-    # Full RMSEスコアの表示&LINE通知
-    full_rmse = rmse(train_df['target'], oof_preds)
-    line_notify('Full RMSE score %.6f' % full_rmse)
-
-    # display importances
-    
-
-    if not debug:
-        # 提出データの予測値を保存
-        test_df.loc[:,'target'] = sub_preds
-        test_df = test_df.reset_index()
-        test_df[['card_id', 'target']].to_csv(submission_file_name, index=False)
-
-        # out of foldの予測値を保存
-        train_df.loc[:,'OOF_PRED'] = oof_preds
-        train_df = train_df.reset_index()
-        train_df[['card_id', 'OOF_PRED']].to_csv(oof_file_name, index=False)
-
-        # API経由でsubmit
-        submit(submission_file_name, comment='model107 cv: %.6f' % full_rmse)
-"""
+    return models, model_params, feature_importance_df, train_preds, test_preds, scores
