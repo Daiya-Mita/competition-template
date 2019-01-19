@@ -14,6 +14,7 @@ from utils import log_best_xgb
 # LightGBM GBDT with KFold or Stratified KFold
 def kfold_xgb(train_df, test_df, model_loss, num_folds, feats_exclude, stratified=False, use_gpu=False):
     logging.debug("Starting XGBoost.")
+    model_name = 'kfold_xgb'
 
     # Cross validation model
     if stratified:
@@ -90,7 +91,7 @@ def kfold_xgb(train_df, test_df, model_loss, num_folds, feats_exclude, stratifie
         feature_importance_df = pd.concat(
             [feature_importance_df, fold_importance_df], axis=0)
         logging.debug('Fold_{}_best'.format(n_fold))
-        log_best_xgb(model, model_loss)
+        log_best_xgb(model)
         scores.append(model.best_score)
 
-    return models, model_params, feature_importance_df, train_preds, test_preds, scores
+    return models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name

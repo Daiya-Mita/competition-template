@@ -18,7 +18,7 @@ def log_best_lgbm(model, metric):
     logging.debug(model.best_score['valid'][metric])
 
 
-def log_best_xgb(model, metric):
+def log_best_xgb(model):
     logging.debug(model.best_iteration)
     logging.debug(model.best_score)
 
@@ -34,6 +34,16 @@ def log_evaluation(logger, period=1, show_stdv=True, level=logging.DEBUG):
             logger.log(level, '[{}]\t{}'.format(env.iteration + 1, result))
     _callback.order = 10
     return _callback
+
+
+def create_score_log(scores):
+    score = sum(scores) / len(scores)
+    print('===CV scores===')
+    print(scores)
+    print(score)
+    logging.debug('===CV scores===')
+    logging.debug(scores)
+    logging.debug(score)
 
 
 def rmse(y_true, y_pred):
@@ -58,7 +68,7 @@ def one_hot_encoder(df, nan_as_category=True):
     return df, new_cols
 
 
-def load_datasets(feature_path):
+def load_datasets(feature_path, is_debug=False):
     # dfs = [pd.read_feather(f'features/{f}_train.feather') for f in feats]
     feats = [f for f in os.listdir(feature_path) if f[-13:] == 'train.feather']
     dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
@@ -67,6 +77,9 @@ def load_datasets(feature_path):
     feats = [f for f in os.listdir(feature_path) if f[-12:] == 'test.feather']
     dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
     test = pd.concat(dfs, axis=1)
+    if is_debug:
+        train = train.iloc[0:10000]
+        test = test.iloc[0:10000]
     return train, test
 
 
@@ -155,7 +168,7 @@ def reduce_mem_usage(df, verbose=True):
 
 
 # Display/plot feature importance
-def display_importances(feature_importance_df_, outputpath, csv_outputpath):
+def save_importances(feature_importance_df_, outputpath, csv_outputpath):
     cols = feature_importance_df_[["feature", "importance"]]\
         .groupby("feature").mean()\
         .sort_values(by="importance", ascending=False)[:40].index
@@ -176,17 +189,17 @@ def display_importances(feature_importance_df_, outputpath, csv_outputpath):
     plt.savefig(outputpath)
 
 
-def make_output_dir(score):
+def make_output_dir(score, model_name):
     path = '../data/output/'
     folders = []
     for x in os.listdir(path):
         if os.path.isdir(path + x):
             folders.append(x)
     if folders == []:
-        folder_name = '/001_score_{}'.format(score)
+        folder_name = '/001_{0}_score_{1}'.format(model_name, score)
     else:
         max_folder_num = max(int(f[:3]) for f in folders)
-        folder_name = '/{0:0=3}_score_{1}'.format(max_folder_num+1, score)
+        folder_name = '/{0:0=3}_{1}_score_{2}'.format(max_folder_num+1, model_name, score)
     os.mkdir(path + folder_name)
     return path + folder_name
 

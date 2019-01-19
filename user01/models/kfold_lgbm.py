@@ -14,6 +14,7 @@ from utils import log_best_lgbm
 # LightGBM GBDT with KFold or Stratified KFold
 def kfold_lightgbm(train_df, test_df, model_loss, num_folds, feats_exclude, stratified=False, use_gpu=False):
     logging.debug("Starting LightGBM.")
+    model_name = 'kfold_lgbm'
 
     # Cross validation model
     if stratified:
@@ -95,4 +96,4 @@ def kfold_lightgbm(train_df, test_df, model_loss, num_folds, feats_exclude, stra
         log_best_lgbm(model, model_loss)
         scores.append(model.best_score['valid'][model_loss])
 
-    return models, model_params, feature_importance_df, train_preds, test_preds, scores
+    return models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name
