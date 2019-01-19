@@ -58,7 +58,7 @@ models, model_params, feature_importance_df, train_preds, test_preds, scores, mo
 # CVスコア
 create_score_log(scores)
 
-# submitファイルなどをまとめて保存します
+# submitファイルなどをまとめて保存します. ほんとはもっと疎結合にしてutilに置けるようにしたい...
 def output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name):
     score = sum(scores) / len(scores)
     folder_path = make_output_dir(score, model_name)
