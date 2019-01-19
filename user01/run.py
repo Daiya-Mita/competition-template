@@ -11,11 +11,11 @@ cwd = os.getcwd()
 sys.path.append(cwd.replace(this_folder, ''))
 from models.kfold_lgbm import kfold_lightgbm
 from models.kfold_xgb import kfold_xgb
-from utils import load_datasets, create_score_log, make_output_dir, save_importances, save2pkl # , line_notify, submit, load_target
+from utils import load_datasets, removeMissingColumns, create_score_log, make_output_dir, save_importances, save2pkl  # , line_notify, submit, load_target
 
 # config
 create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
-is_debug = True  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
+is_debug = False  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
 use_GPU = False
 feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
                   'hist_purchase_date_max', 'hist_purchase_date_min', 'hist_card_id_size',
@@ -43,9 +43,14 @@ if create_features:
 # loading
 path = cwd.replace(this_folder, '/features')
 train_df, test_df = load_datasets(path, is_debug)
+
+# 欠損値処理
+train_df, test_df = removeMissingColumns(train_df, test_df, 0.5)
+#train_df = train_df.dropna(how='any')
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
 # model
+"""
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_lightgbm(
     train_df, test_df, model_loss=loss_type, num_folds=folds,
     feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
@@ -53,7 +58,7 @@ models, model_params, feature_importance_df, train_preds, test_preds, scores, mo
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_xgb(
     train_df, test_df, model_loss=loss_type, num_folds=folds,
     feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
-"""
+
 
 # CVスコア
 create_score_log(scores)
@@ -66,6 +71,8 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
         save2pkl('{0}/model_{1:0=2}.pkl'.format(folder_path, i), m)
     with open('{0}/model_params.json'.format(folder_path), 'w') as f:
         json.dump(model_params, f, indent=4)
+    with open('{0}/model_valid_scores.json'.format(folder_path), 'w') as f:
+        json.dump({i:s for i, s in enumerate(scores)}, f, indent=4)
     save_importances(
         feature_importance_df,
         '{}/importances.png'.format(folder_path),

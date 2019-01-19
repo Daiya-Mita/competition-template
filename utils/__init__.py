@@ -78,9 +78,26 @@ def load_datasets(feature_path, is_debug=False):
     dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
     test = pd.concat(dfs, axis=1)
     if is_debug:
-        train = train.iloc[0:10000]
-        test = test.iloc[0:10000]
+        train = train.iloc[0:10000,:]
+        test = test.iloc[0:10000,:]
     return train, test
+
+
+# 欠損値の率が高い変数を発見する機能
+def findMissingColumns(data, threshold):
+    missing = (data.isnull().sum() / len(data)).sort_values(ascending = False)
+    col_missing = missing.index[missing > threshold]
+    col_missing = [column for column in col_missing]
+    return col_missing
+
+
+def removeMissingColumns(train_df, test_df, threshold_col):
+    missing_cols = findMissingColumns(train_df, threshold_col)
+    train_df = train_df.drop(missing_cols, axis=1)
+    test_df = test_df.drop(missing_cols, axis=1)
+    logging.debug('missing cols')
+    logging.debug(missing_cols)
+    return train_df, test_df
 
 
 def line_notify(message):
@@ -206,4 +223,4 @@ def make_output_dir(score, model_name):
 
 # この部分は上記の各関数の動作確認のために使います
 if __name__ == '__main__':
-    make_output_dir(0.02)
+    make_output_dir(0.02, 'lgbm')

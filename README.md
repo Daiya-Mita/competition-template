@@ -38,7 +38,7 @@
 ```
 python convert_to_feather.py
 ```
-### ユーザーごとの作業は基本 ./user で行う(user01とuser02は全く同じ内容)
+### ユーザーごとの作業は基本 ./user で行う(user01とuser02は基本的に同じ内容)
 特徴量の feather化 を以下で行う.(特徴量に変更があった時は, 該当する特徴量ファイル（/features/*.feather）を削除の上で, 再実行.あるいは別のクラスを定義して実行)
 ```
 python create_features.py

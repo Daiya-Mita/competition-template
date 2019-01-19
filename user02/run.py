@@ -16,7 +16,7 @@ from utils import load_datasets, create_score_log, make_output_dir, save_importa
 # config
 create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
 is_debug = True  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
-use_GPU = False
+use_GPU = True
 feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
                   'hist_purchase_date_max', 'hist_purchase_date_min', 'hist_card_id_size',
                   'new_purchase_date_max', 'new_purchase_date_min', 'new_card_id_size',
@@ -66,6 +66,8 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
         save2pkl('{0}/model_{1:0=2}.pkl'.format(folder_path, i), m)
     with open('{0}/model_params.json'.format(folder_path), 'w') as f:
         json.dump(model_params, f, indent=4)
+    with open('{0}/model_valid_scores.json'.format(folder_path), 'w') as f:
+        json.dump({i:s for i, s in enumerate(scores)}, f, indent=4)
     save_importances(
         feature_importance_df,
         '{}/importances.png'.format(folder_path),
