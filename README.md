@@ -8,7 +8,7 @@
 │   │   ├── *.csv
 │   │   └── *.feather
 │   └── output
-│   │   └── *
+│       └── *
 ├── features
 │   └── *.feather
 ├── logs
