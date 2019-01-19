@@ -138,6 +138,7 @@ def save2pkl(path, object):
 def loadpkl(path):
     f = open(path, 'rb')
     out = pickle.load(f)
+    f.close
     return out
 
 
