@@ -53,9 +53,9 @@ def rmse(y_true, y_pred):
 @contextmanager
 def timer(name):
     t0 = time.time()
-    print(f'[{name}] start')
+    print('[{}] start'.format(name))
     yield
-    print(f'[{name}] done in {time.time() - t0:.0f} s')
+    print('[{}] done in {} s'.format(name,time.time()-t0))
 
 
 def one_hot_encoder(df, nan_as_category=True):

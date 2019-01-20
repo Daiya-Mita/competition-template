@@ -40,8 +40,8 @@ class Feature(metaclass=ABCMeta):
         self.train = pd.DataFrame()
         self.test = pd.DataFrame()
         # self.df = pd.DataFrame()
-        self.train_path = Path(self.dir) / f'{self.name}_train.feather'
-        self.test_path = Path(self.dir) / f'{self.name}_test.feather'
+        self.train_path = Path(self.dir) / '{}_train.feather'.format(self.name)
+        self.test_path = Path(self.dir) / '{}_test.feather'.format(self.name)
         # self.df_path = Path(self.dir) / f'{self.name}_df.feather'
 
     def run(self):
