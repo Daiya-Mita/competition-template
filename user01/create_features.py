@@ -3,6 +3,7 @@ import numpy as np
 import datetime
 import feather
 import gc
+import json
 from workalendar.america import Brazil
 import os
 import sys
@@ -425,3 +426,9 @@ class Additional_features(Feature):
 
 if __name__ == '__main__':
     generate_features(globals())
+    features_json = {}
+    features_path = cwd.replace(this_folder,'/features')
+    df, _ = load_datasets(features_path)
+    features_json.update({'features':list(df.columns)})
+    with open('features.json', 'w') as f:
+        json.dump(features_json, f, indent=4)

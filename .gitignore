@@ -12,3 +12,4 @@ notebook/*.ipynb
 notebook/*.ipynb_checkpoints
 logs/*.log
 features/*.feather
+*/features.json
