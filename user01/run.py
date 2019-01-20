@@ -32,6 +32,7 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 logging.debug('../logs/log_{0:%Y-%m-%d-%H-%M-%S}.log'.format(now))
+logging.debug('is_debug:{}'.format(is_debug))
 
 # create features
 if create_features:

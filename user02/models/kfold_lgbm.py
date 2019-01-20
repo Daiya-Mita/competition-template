@@ -13,8 +13,8 @@ from utils import log_best_lgbm
 
 # LightGBM GBDT with KFold or Stratified KFold
 def kfold_lightgbm(train_df, test_df, model_loss, num_folds, feats_exclude, stratified=False, use_gpu=False):
-    logging.debug("Starting LightGBM.")
     model_name = sys._getframe().f_code.co_name
+    logging.debug("Starting {}".format(model_name))
 
     # Cross validation model
     if stratified:

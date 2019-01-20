@@ -14,13 +14,13 @@ from sklearn.metrics import mean_squared_error
 
 
 def log_best_lgbm(model, metric):
-    logging.debug(model.best_iteration)
-    logging.debug(model.best_score['valid'][metric])
+    logging.debug('best iteration:{}'.format(model.best_iteration))
+    logging.debug('best score:{}'.format(model.best_score['valid'][metric]))
 
 
 def log_best_xgb(model):
-    logging.debug(model.best_iteration)
-    logging.debug(model.best_score)
+    logging.debug('best iteration:{}'.format(model.best_iteration))
+    logging.debug('best score:{}'.format(model.best_score))
 
 
 def log_evaluation(logger, period=1, show_stdv=True, level=logging.DEBUG):
@@ -95,8 +95,7 @@ def removeMissingColumns(train_df, test_df, threshold_col):
     missing_cols = findMissingColumns(train_df, threshold_col)
     train_df = train_df.drop(missing_cols, axis=1)
     test_df = test_df.drop(missing_cols, axis=1)
-    logging.debug('missing cols')
-    logging.debug(missing_cols)
+    logging.debug('missing cols:{}'.format(missing_cols))
     return train_df, test_df
 
 
