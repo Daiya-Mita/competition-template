@@ -352,7 +352,7 @@ class New_merchant_transactions(Feature):
         self.train = new_merchant_df_train.reset_index(drop=True)
         self.test = new_merchant_df_test.reset_index(drop=True)
 
-"""
+
 class Additional_features(Feature):
     def create_features(self):
         #df = load_all()
@@ -422,6 +422,5 @@ class Additional_features(Feature):
         self.train = train_df
         self.test = test_df
 
-"""
 if __name__ == '__main__':
     generate_features(globals())

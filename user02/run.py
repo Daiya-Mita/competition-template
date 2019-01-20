@@ -12,11 +12,14 @@ sys.path.append(cwd.replace(this_folder, ''))
 from models.kfold_lgbm import kfold_lightgbm
 from models.kfold_xgb import kfold_xgb
 from utils import load_datasets, create_score_log, make_output_dir, save_importances, save2pkl # , line_notify, submit, load_target
+from utils import submit, line_notify
 
 # config
-create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
-is_debug = True  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
+create_features = True  # create_features.py を再実行する場合は True, そうでない場合は False
+is_debug = False  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
 use_GPU = True
+
+competition_name = 'elo-merchant-category-recommendation'
 target_col = 'target'
 feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
                   'hist_purchase_date_max', 'hist_purchase_date_min', 'hist_card_id_size',
@@ -58,6 +61,8 @@ models, model_params, feature_importance_df, train_preds, test_preds, scores, mo
 
 # CVスコア
 create_score_log(scores)
+score = float(sum(scores) / len(scores))
+line_notify('Full RMSE score %.6f' % score)
 
 # submitファイルなどをまとめて保存します. ほんとはもっと疎結合にしてutilに置けるようにしたい...
 def output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name):
@@ -73,17 +78,20 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
         feature_importance_df,
         '{}/importances.png'.format(folder_path),
         '{}/importance.csv'.format(folder_path))
+
     # 以下の部分はコンペごとに修正が必要
+    submission_file_name = '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score)
+
     test_df.loc[:, 'target'] = test_preds
     test_df = test_df.reset_index()
-    test_df[['card_id', 'target']].to_csv(
-        '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score),
-        index=False
-    )
+    test_df[['card_id', 'target']].to_csv(submission_file_name,index=False)
+
     train_df.loc[:, 'OOF_PRED'] = train_preds
     train_df = train_df.reset_index()
-    train_df[['card_id', 'OOF_PRED']].to_csv(
-        '{0}/oof.csv'.format(folder_path),
-    )
+    train_df[['card_id', 'OOF_PRED']].to_csv('{0}/oof.csv'.format(folder_path),)
+
+    # API経由でsubmit
+    if not is_debug:
+        submit(competition_name, submission_file_name, comment='model101 cv: %.6f' % score)
 
 output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name)

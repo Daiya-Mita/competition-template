@@ -5,6 +5,7 @@ data/input/*.csv
 data/input/*.xlsx
 data/input/*.zip
 data/input/*.feather
+data/input/*.txt
 data/output/
 
 notebook/*.ipynb
