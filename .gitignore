@@ -9,5 +9,6 @@ data/input/*.txt
 data/output/
 
 notebook/*.ipynb
+notebook/*.ipynb_checkpoints
 logs/*.log
 features/*.feather
