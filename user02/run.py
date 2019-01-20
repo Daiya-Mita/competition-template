@@ -4,7 +4,9 @@ import logging
 # import argparse
 import subprocess
 import json
+import numpy as np
 import os
+import pandas as pd
 import sys
 this_folder = '/user02'
 cwd = os.getcwd()
@@ -61,7 +63,7 @@ models, model_params, feature_importance_df, train_preds, test_preds, scores, mo
 
 # CVスコア
 create_score_log(scores)
-score = float(sum(scores) / len(scores))
+score = np.mean(np.array(scores))
 line_notify('Full RMSE score %.6f' % score)
 
 # submitファイルなどをまとめて保存します. ほんとはもっと疎結合にしてutilに置けるようにしたい...
