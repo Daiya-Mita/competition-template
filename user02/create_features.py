@@ -3,6 +3,7 @@ import numpy as np
 import datetime
 import feather
 import gc
+import json
 from workalendar.america import Brazil
 import os
 import sys
@@ -105,7 +106,7 @@ class Historical_transactions(Feature):
 
         # datetime features
         hist_df['purchase_date'] = pd.to_datetime(hist_df['purchase_date'])
-    #    hist_df['year'] = hist_df['purchase_date'].dt.year
+        hist_df['year'] = hist_df['purchase_date'].dt.year
         hist_df['month'] = hist_df['purchase_date'].dt.month
         hist_df['day'] = hist_df['purchase_date'].dt.day
         hist_df['hour'] = hist_df['purchase_date'].dt.hour
@@ -243,7 +244,7 @@ class New_merchant_transactions(Feature):
 
         # datetime features
         new_merchant_df['purchase_date'] = pd.to_datetime(new_merchant_df['purchase_date'])
-    #    new_merchant_df['year'] = new_merchant_df['purchase_date'].dt.year
+        new_merchant_df['year'] = new_merchant_df['purchase_date'].dt.year
         new_merchant_df['month'] = new_merchant_df['purchase_date'].dt.month
         new_merchant_df['day'] = new_merchant_df['purchase_date'].dt.day
         new_merchant_df['hour'] = new_merchant_df['purchase_date'].dt.hour
@@ -256,19 +257,19 @@ class New_merchant_transactions(Feature):
 
         #ブラジルの休日
         cal = Brazil()
-    #    new_merchant_df['is_holiday'] = new_merchant_df['purchase_date'].dt.date.apply(cal.is_holiday).astype(int)
+        new_merchant_df['is_holiday'] = new_merchant_df['purchase_date'].dt.date.apply(cal.is_holiday).astype(int)
 
         # 購入日からイベント日までの経過日数
         #Christmas : December 25 2017
         new_merchant_df['Christmas_Day_2017']=(pd.to_datetime('2017-12-25')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
         #Mothers Day: May 14 2017
-    #    new_merchant_df['Mothers_Day_2017']=(pd.to_datetime('2017-06-04')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
+        new_merchant_df['Mothers_Day_2017']=(pd.to_datetime('2017-06-04')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
         #fathers day: August 13 2017
         new_merchant_df['fathers_day_2017']=(pd.to_datetime('2017-08-13')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
         #Childrens day: October 12 2017
         new_merchant_df['Children_day_2017']=(pd.to_datetime('2017-10-12')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
         #Valentine's Day : 12th June, 2017
-    #    new_merchant_df['Valentine_Day_2017']=(pd.to_datetime('2017-06-12')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
+        new_merchant_df['Valentine_Day_2017']=(pd.to_datetime('2017-06-12')-new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
         #Black Friday : 24th November 2017
         new_merchant_df['Black_Friday_2017']=(pd.to_datetime('2017-11-24') - new_merchant_df['purchase_date']).dt.days.apply(lambda x: x if x > 0 and x < 100 else 0)
 
@@ -301,7 +302,7 @@ class New_merchant_transactions(Feature):
         aggs['purchase_date'] = ['max','min']
         aggs['month_lag'] = ['max','min','mean','var','skew']
         aggs['month_diff'] = ['mean','var','skew']
-    #    aggs['authorized_flag'] = ['mean']
+        aggs['authorized_flag'] = ['mean']
         aggs['weekend'] = ['mean']
         aggs['month'] = ['mean', 'min', 'max']
         aggs['weekday'] = ['mean', 'min', 'max']
@@ -309,13 +310,13 @@ class New_merchant_transactions(Feature):
         aggs['category_2'] = ['mean']
         aggs['category_3'] = ['mean']
         aggs['card_id'] = ['size','count']
-    #    aggs['is_holiday'] = [ 'mean']
+        aggs['is_holiday'] = [ 'mean']
         aggs['price'] = ['mean','max','min','var']
         aggs['Christmas_Day_2017'] = ['mean']
-    #    aggs['Mothers_Day_2017'] = ['mean']
-    #    aggs['fathers_day_2017'] = ['mean']
+        aggs['Mothers_Day_2017'] = ['mean']
+        aggs['fathers_day_2017'] = ['mean']
         aggs['Children_day_2017'] = ['mean']
-    #    aggs['Valentine_Day_2017'] = ['mean']
+        aggs['Valentine_Day_2017'] = ['mean']
         aggs['Black_Friday_2017'] = ['mean']
         aggs['Mothers_Day_2018'] = ['mean']
         aggs['duration']=['mean','min','max','var','skew']
@@ -387,13 +388,13 @@ class Additional_features(Feature):
         df['purchase_amount_ratio'] = df['new_purchase_amount_sum']/df['hist_purchase_amount_sum']
         df['month_diff_mean'] = df['new_month_diff_mean']+df['hist_month_diff_mean']
         df['month_diff_ratio'] = df['new_month_diff_mean']/df['hist_month_diff_mean']
-    #    df['month_diff_max'] = df['new_month_diff_max']+df['hist_month_diff_max']
-    #    df['month_diff_min'] = df['new_month_diff_min']+df['hist_month_diff_min']
+        df['month_diff_max'] = df['new_month_diff_max']+df['hist_month_diff_max']
+        df['month_diff_min'] = df['new_month_diff_min']+df['hist_month_diff_min']
         df['month_lag_mean'] = df['new_month_lag_mean']+df['hist_month_lag_mean']
         df['month_lag_max'] = df['new_month_lag_max']+df['hist_month_lag_max']
         df['month_lag_min'] = df['new_month_lag_min']+df['hist_month_lag_min']
         df['category_1_mean'] = df['new_category_1_mean']+df['hist_category_1_mean']
-    #    df['category_1_min'] = df['new_category_1_min']+df['hist_category_1_min']
+        df['category_1_min'] = df['new_category_1_min']+df['hist_category_1_min']
         df['installments_total'] = df['new_installments_sum']+df['hist_installments_sum']
         df['installments_mean'] = df['new_installments_mean']+df['hist_installments_mean']
         df['installments_max'] = df['new_installments_max']+df['hist_installments_max']
@@ -422,3 +423,9 @@ class Additional_features(Feature):
 
 if __name__ == '__main__':
     generate_features(globals())
+    features_json = {}
+    features_path = cwd.replace(this_folder,'/features')
+    df, _ = load_datasets(features_path)
+    features_json.update({'features':list(df.columns)})
+    with open('features.json', 'w') as f:
+        json.dump(features_json, f, indent=4)

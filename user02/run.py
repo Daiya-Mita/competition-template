@@ -48,11 +48,12 @@ if create_features:
 
 # loading
 path = cwd.replace(this_folder, '/features')
+feats = json.load(open('features_to_use.json'))['features']
 train_df, test_df = load_datasets(path, is_debug)
+train_df, test_df = train_df[feats], test_df[feats]
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
 # model
-"""
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_lightgbm(
     train_df, test_df, target_col=target_col, model_loss=loss_type,
     num_folds=folds, feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
@@ -60,7 +61,7 @@ models, model_params, feature_importance_df, train_preds, test_preds, scores, mo
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_xgb(
     train_df, test_df, target_col=target_col, model_loss=loss_type,
     num_folds=folds, feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
-
+"""
 # CVスコア
 create_score_log(scores)
 score = np.mean(np.array(scores))
