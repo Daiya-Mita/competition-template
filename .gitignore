@@ -1,11 +1,12 @@
 .DS_Store
-notebook/*.ipynb
-logs/*.log
-features/*.feather
+__pycache__
+
 data/input/*.csv
 data/input/*.xlsx
 data/input/*.zip
 data/input/*.feather
 data/output/
-*/__pycache__
-*/*/__pycache__
+
+notebook/*.ipynb
+logs/*.log
+features/*.feather
