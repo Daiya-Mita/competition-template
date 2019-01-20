@@ -223,4 +223,4 @@ def make_output_dir(score, now, model_name):
 
 # この部分は上記の各関数の動作確認のために使います
 if __name__ == '__main__':
-    make_output_dir(0.02, 'lgbm')
+    pass
