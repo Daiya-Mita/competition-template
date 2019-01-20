@@ -4,6 +4,7 @@ import datetime
 import feather
 import gc
 import json
+import scipy as sp
 from workalendar.america import Brazil
 import os
 import sys
@@ -236,6 +237,14 @@ class New_merchant_transactions(Feature):
         new_merchant_df['category_1'] = new_merchant_df['category_1'].map({'Y': 1, 'N': 0}).astype(int)
         new_merchant_df['category_3'] = new_merchant_df['category_3'].map({'A':0, 'B':1, 'C':2}).astype(int)
 
+        # SVD追加
+        svd_df_1 = calc_svd_mat(new_merchant_df, 'category_1', 'category_2')
+        new_merchant_df = pd.merge(new_merchant_df, svd_df_1, on=['category_1'], how='left')
+        svd_df_2 = calc_svd_mat(new_merchant_df, 'category_1', 'category_3')
+        new_merchant_df = pd.merge(new_merchant_df, svd_df_2, on=['category_1'], how='left')
+        svd_df_3 = calc_svd_mat(new_merchant_df, 'category_2', 'category_3')
+        new_merchant_df = pd.merge(new_merchant_df, svd_df_3, on=['category_2'], how='left')
+
         # datetime features
         new_merchant_df['purchase_date'] = pd.to_datetime(new_merchant_df['purchase_date'])
     #    new_merchant_df['year'] = new_merchant_df['purchase_date'].dt.year
@@ -422,6 +431,52 @@ class Additional_features(Feature):
 
         self.train = train_df
         self.test = test_df
+
+
+class decomposed_features(Feature):
+    def create_features(self):
+        train_df = feather.read_dataframe('../data/input/train.feather')
+        test_df = feather.read_dataframe('../data/input/test.feather')
+
+        # set target as nan
+        test_df['target'] = np.nan
+
+        # merge
+        df = train_df.append(test_df)
+        init_cols = df.columns
+
+        del train_df, test_df
+        gc.collect()
+
+        svd_df_1 = calc_svd_mat(df, 'feature_1', 'feature_2')
+        svd_df = pd.merge(df, svd_df_1, on=['feature_1'], how='left')
+        svd_df_2 = calc_svd_mat(df, 'feature_1', 'feature_3')
+        svd_df = pd.merge(svd_df, svd_df_2, on=['feature_1'], how='left')
+        svd_df_3 = calc_svd_mat(df, 'feature_2', 'feature_3')
+        svd_df = pd.merge(svd_df, svd_df_3, on=['feature_2'], how='left')
+
+        svd_train = svd_df[svd_df['target'].notnull()]
+        svd_test = svd_df[svd_df['target'].isnull()]
+
+        svd_train = svd_train.drop(init_cols, axis=1)
+        svd_test = svd_test.drop(init_cols, axis=1)
+
+        self.train = svd_train.reset_index(drop=True)
+        self.test = svd_test.reset_index(drop=True)
+
+
+def calc_svd_mat(df, feature_1, feature_2):
+    test = df.loc[:,[feature_1,feature_2]]
+    mat = pd.DataFrame(index=sorted(test[feature_1].unique()), columns=sorted(test[feature_2].unique()))
+    for i in test[feature_1].unique():
+        for j in test[feature_2].unique():
+            mat.loc[i, j] = len(test[(test[feature_1]==i)&(test[feature_2]==j)])
+    U, s, V = np.linalg.svd(mat, full_matrices=False)
+    svd_df = pd.DataFrame(U, index=sorted(test[feature_1].unique()))
+    svd_df.columns = ['{0}_{1}_{2}'.format(feature_1, feature_2, i) for i in svd_df.columns]
+    svd_df = svd_df.reset_index()
+    svd_df = svd_df.rename(columns={'index': feature_1})
+    return svd_df
 
 
 if __name__ == '__main__':

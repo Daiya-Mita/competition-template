@@ -206,17 +206,17 @@ def save_importances(feature_importance_df_, outputpath, csv_outputpath):
     plt.savefig(outputpath)
 
 
-def make_output_dir(score, model_name):
+def make_output_dir(score, now, model_name):
     path = '../data/output/'
     folders = []
     for x in os.listdir(path):
         if os.path.isdir(path + x):
             folders.append(x)
     if folders == []:
-        folder_name = '/001_{0}_score_{1}'.format(model_name, score)
+        folder_name = '/001_{0}_{1:%Y-%m-%d-%H-%M-%S}_{2}'.format(model_name, now, score)
     else:
         max_folder_num = max(int(f[:3]) for f in folders)
-        folder_name = '/{0:0=3}_{1}_score_{2}'.format(max_folder_num+1, model_name, score)
+        folder_name = '/{0:0=3}_{1}_{2:%Y-%m-%d-%H-%M-%S}_{3}'.format(max_folder_num+1, model_name, now, score)
     os.mkdir(path + folder_name)
     return path + folder_name
 

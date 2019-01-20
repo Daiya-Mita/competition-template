@@ -15,7 +15,7 @@ from utils import load_datasets, removeMissingColumns, create_score_log, make_ou
 
 # config
 create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
-is_debug = False  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
+is_debug = True  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
 use_GPU = False
 target_col = 'target'
 feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
@@ -66,9 +66,9 @@ models, model_params, feature_importance_df, train_preds, test_preds, scores, mo
 create_score_log(scores)
 
 # submitファイルなどをまとめて保存します. ほんとはもっと疎結合にしてutilに置けるようにしたい...
-def output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name):
+def output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, now, model_name):
     score = sum(scores) / len(scores)
-    folder_path = make_output_dir(score, model_name)
+    folder_path = make_output_dir(score, now, model_name)
     for i, m in enumerate(models):
         save2pkl('{0}/model_{1:0=2}.pkl'.format(folder_path, i), m)
     with open('{0}/model_params.json'.format(folder_path), 'w') as f:
@@ -92,4 +92,4 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
         '{0}/oof.csv'.format(folder_path),
     )
 
-output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name)
+output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, now, model_name)
