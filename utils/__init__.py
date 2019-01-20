@@ -70,11 +70,11 @@ def one_hot_encoder(df, nan_as_category=True):
 
 def load_datasets(feature_path, is_debug=False):
     # dfs = [pd.read_feather(f'features/{f}_train.feather') for f in feats]
-    feats = [f for f in os.listdir(feature_path) if f[-13:] == 'train.feather']
+    feats = list(reversed(sorted([f for f in os.listdir(feature_path) if f[-13:] == 'train.feather'])))
     dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
     train = pd.concat(dfs, axis=1)
     # dfs = [pd.read_feather(f'features/{f}_test.feather') for f in feats]
-    feats = [f for f in os.listdir(feature_path) if f[-12:] == 'test.feather']
+    feats = list(reversed(sorted([f for f in os.listdir(feature_path) if f[-12:] == 'test.feather'])))
     dfs = [feather.read_dataframe(feature_path+'/'+f) for f in feats]
     test = pd.concat(dfs, axis=1)
     if is_debug:
