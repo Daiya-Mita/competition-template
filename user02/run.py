@@ -48,9 +48,9 @@ if create_features:
 
 # loading
 path = cwd.replace(this_folder, '/features')
-#feats = json.load(open('features_to_use.json'))['features']
+feats = json.load(open('features_to_use.json'))['features']
 train_df, test_df = load_datasets(path, is_debug)
-#train_df, test_df = train_df[feats], test_df[feats]
+train_df, test_df = train_df[feats], test_df[feats]
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
 # model
