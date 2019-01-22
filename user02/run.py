@@ -95,6 +95,6 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
 
     # API経由でsubmit
     if not is_debug:
-        submit(competition_name, submission_file_name, comment='model101 cv: %.6f' % score)
+        submit(competition_name, submission_file_name, comment='user02 cv: %.6f' % score)
 
 output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name)
