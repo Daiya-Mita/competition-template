@@ -68,9 +68,9 @@ score = np.mean(np.array(scores))
 line_notify('Full RMSE score %.6f' % score)
 
 # submitファイルなどをまとめて保存します. ほんとはもっと疎結合にしてutilに置けるようにしたい...
-def output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name):
+def output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, now, model_name):
     score = sum(scores) / len(scores)
-    folder_path = make_output_dir(score, model_name)
+    folder_path = make_output_dir(score, now, model_name)
     for i, m in enumerate(models):
         save2pkl('{0}/model_{1:0=2}.pkl'.format(folder_path, i), m)
     with open('{0}/model_params.json'.format(folder_path), 'w') as f:
@@ -97,4 +97,4 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
     if not is_debug:
         submit(competition_name, submission_file_name, comment='user02 cv: %.6f' % score)
 
-output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name)
+output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, now, model_name)
