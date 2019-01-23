@@ -13,6 +13,7 @@ cwd = os.getcwd()
 sys.path.append(cwd.replace(this_folder, ''))
 from models.kfold_lgbm import kfold_lightgbm
 from models.kfold_xgb import kfold_xgb
+from models.kfold_lgbm_binary import kfold_lightgbm_binary
 from utils import load_datasets, create_score_log, make_output_dir, save_importances, save2pkl # , line_notify, submit, load_target
 from utils import submit, line_notify
 
@@ -53,10 +54,17 @@ train_df, test_df = load_datasets(path, is_debug)
 train_df, test_df = train_df[feats], test_df[feats]
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
-# model
+# train binary model
+models_bin, model_params_bin, feature_importance_df_bin, train_preds_bin, \
+test_preds_bin, scores_bin, model_name_bin = kfold_lightgbm_binary(
+    train_df, test_df, target_col='outliers', model_loss='auc',
+    num_folds=folds, feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
+
+# train usual model
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_lightgbm(
     train_df, test_df, target_col=target_col, model_loss=loss_type,
     num_folds=folds, feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
+
 """
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_xgb(
     train_df, test_df, target_col=target_col, model_loss=loss_type,
@@ -86,6 +94,9 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
     submission_file_name = '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score)
 
     test_df.loc[:, 'target'] = test_preds
+    test_df.loc[:,'Outlier_Likelyhood'] = test_preds_bin
+    q = test_df['Outlier_Likelyhood'].quantile(.98907) # 1.0930%
+    test_df.loc[:,'target']=test_df['Outlier_Likelyhood'].apply(lambda x: 1 if x > q else x)
     test_df = test_df.reset_index()
     test_df[['card_id', 'target']].to_csv(submission_file_name,index=False)
 

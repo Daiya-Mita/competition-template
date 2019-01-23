@@ -12,7 +12,7 @@ from utils import log_best_lgbm
 
 
 # LightGBM GBDT with KFold or Stratified KFold
-def kfold_lightgbm(train_df, test_df, target_col, model_loss, num_folds, feats_exclude, stratified=False, use_gpu=False):
+def kfold_lightgbm_binary(train_df, test_df, target_col, model_loss, num_folds, feats_exclude, stratified=False, use_gpu=False):
     model_name = sys._getframe().f_code.co_name
     logging.debug("Starting {}".format(model_name))
 
@@ -35,8 +35,8 @@ def kfold_lightgbm(train_df, test_df, target_col, model_loss, num_folds, feats_e
     # k-fold
     for n_fold, (train_idx, valid_idx) in enumerate(folds.split(train_df[feats], train_df['outliers'])):
         print('Fold_{}'.format(n_fold))
-        train_x, train_y = train_df[feats].iloc[train_idx], train_df['outliers'].iloc[train_idx]
-        valid_x, valid_y = train_df[feats].iloc[valid_idx], train_df['outliers'].iloc[valid_idx]
+        train_x, train_y = train_df[feats].iloc[train_idx], train_df[target_col].iloc[train_idx]
+        valid_x, valid_y = train_df[feats].iloc[valid_idx], train_df[target_col].iloc[valid_idx]
 
         # set data structure
         lgb_train = lgb.Dataset(train_x, label=train_y, free_raw_data=False)
