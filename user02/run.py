@@ -95,7 +95,7 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
 
     test_df.loc[:, 'target'] = test_preds
     test_df.loc[:,'Outlier_Likelyhood'] = test_preds_bin
-    q = test_df['Outlier_Likelyhood'].quantile(.98907) # 1.0930%
+    q = test_df['Outlier_Likelyhood'].quantile(.999) # 1.0930%
     test_df.loc[:,'target']=test_df['Outlier_Likelyhood'].apply(lambda x: 1 if x > q else x)
     test_df = test_df.reset_index()
     test_df[['card_id', 'target']].to_csv(submission_file_name,index=False)
