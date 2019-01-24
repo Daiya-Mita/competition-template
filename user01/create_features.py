@@ -4,8 +4,10 @@ import datetime
 import feather
 import gc
 import json
+from tqdm import tqdm
 import scipy as sp
 from workalendar.america import Brazil
+from sklearn.decomposition import NMF
 import os
 import sys
 this_folder = '/user01'
@@ -92,16 +94,25 @@ class Historical_transactions(Feature):
         hist_df = feather.read_dataframe('../data/input/historical_transactions.feather')
 
         # fillna
-        hist_df['category_2'].fillna(1.0,inplace=True)
-        hist_df['category_3'].fillna('A',inplace=True)
-        hist_df['merchant_id'].fillna('M_ID_00a6ca8a8a',inplace=True)
-        hist_df['installments'].replace(-1, np.nan,inplace=True)
-        hist_df['installments'].replace(999, np.nan,inplace=True)
+        hist_df['category_2'].fillna(6.0,inplace=True)
+        hist_df['category_3'].fillna('D',inplace=True)
+        #hist_df['merchant_id'].fillna('M_ID_00a6ca8a8a',inplace=True)
+        #hist_df['installments'].replace(-1, np.nan,inplace=True)
+        #hist_df['installments'].replace(999, np.nan,inplace=True)
 
         # Y/Nのカラムを1-0へ変換
         hist_df['authorized_flag'] = hist_df['authorized_flag'].map({'Y': 1, 'N': 0}).astype(int)
         hist_df['category_1'] = hist_df['category_1'].map({'Y': 1, 'N': 0}).astype(int)
-        hist_df['category_3'] = hist_df['category_3'].map({'A':0, 'B':1, 'C':2})
+        #hist_df['category_3'] = hist_df['category_3'].map({'A':0, 'B':1, 'C':2, 'D':3})
+
+        # SVD
+        svd_df_1 =  calc_nmf_mat(hist_df, 'card_id', 'city_id')
+        svd_df_2 =  calc_nmf_mat(hist_df, 'card_id', 'state_id')
+        svd_df_3 =  calc_nmf_mat(hist_df, 'card_id', 'subsector_id')
+        svd_df_4 =  calc_nmf_mat(hist_df, 'card_id', 'merchant_category_id')
+        svd_df_5 =  calc_nmf_mat(hist_df, 'card_id', 'installments')
+        svd_df_6 =  calc_nmf_mat(hist_df, 'card_id', 'category_3')
+        svd_df_7 =  calc_nmf_mat(hist_df, 'card_id', 'category_2')
 
         # datetime features
         hist_df['purchase_date'] = pd.to_datetime(hist_df['purchase_date'])
@@ -159,7 +170,7 @@ class Historical_transactions(Feature):
             aggs[col] = ['nunique', 'mean', 'min', 'max']
 
         aggs['purchase_amount'] = ['sum','max','min','mean','var','skew']
-        aggs['installments'] = ['sum','max','mean','var','skew']
+        #aggs['installments'] = ['sum','max','mean','var','skew']
         aggs['purchase_date'] = ['max','min']
         aggs['month_lag'] = ['max','min','mean','var','skew']
         aggs['month_diff'] = ['max','min','mean','var','skew']
@@ -167,8 +178,8 @@ class Historical_transactions(Feature):
         aggs['weekend'] = ['mean', 'max']
         aggs['weekday'] = ['nunique', 'mean'] # overwrite
         aggs['category_1'] = ['mean']
-        aggs['category_2'] = ['mean']
-        aggs['category_3'] = ['mean']
+        #aggs['category_2'] = ['mean']
+        #aggs['category_3'] = ['mean']
         aggs['card_id'] = ['size','count']
         aggs['is_holiday'] = ['mean']
         aggs['price'] = ['sum','mean','max','min','var','skew']
@@ -181,13 +192,14 @@ class Historical_transactions(Feature):
         aggs['Mothers_Day_2018'] = ['mean']
         aggs['duration']=['mean','min','max','var','skew']
         aggs['amount_month_ratio']=['mean','min','max','var','skew']
-
+        """
         for col in ['category_2','category_3']:
             hist_df[col+'_mean'] = hist_df.groupby([col])['purchase_amount'].transform('mean')
             hist_df[col+'_min'] = hist_df.groupby([col])['purchase_amount'].transform('min')
             hist_df[col+'_max'] = hist_df.groupby([col])['purchase_amount'].transform('max')
             hist_df[col+'_sum'] = hist_df.groupby([col])['purchase_amount'].transform('sum')
             aggs[col+'_mean'] = ['mean']
+        """
 
         hist_df = hist_df.reset_index().groupby('card_id').agg(aggs)
 
@@ -199,6 +211,14 @@ class Historical_transactions(Feature):
         hist_df['hist_purchase_date_average'] = hist_df['hist_purchase_date_diff']/hist_df['hist_card_id_size']
         hist_df['hist_purchase_date_uptonow'] = (datetime.datetime.today()-hist_df['hist_purchase_date_max']).dt.days
         hist_df['hist_purchase_date_uptomin'] = (datetime.datetime.today()-hist_df['hist_purchase_date_min']).dt.days
+
+        hist_df = pd.merge(hist_df, svd_df_1, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, svd_df_2, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, svd_df_3, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, svd_df_4, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, svd_df_5, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, svd_df_6, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, svd_df_7, on=['card_id'], how='left')
 
         #hist_df = hist_df.reset_index()
 
@@ -236,14 +256,6 @@ class New_merchant_transactions(Feature):
         new_merchant_df['authorized_flag'] = new_merchant_df['authorized_flag'].map({'Y': 1, 'N': 0}).astype(int)
         new_merchant_df['category_1'] = new_merchant_df['category_1'].map({'Y': 1, 'N': 0}).astype(int)
         new_merchant_df['category_3'] = new_merchant_df['category_3'].map({'A':0, 'B':1, 'C':2}).astype(int)
-
-        # SVD追加
-        svd_df_1 = calc_svd_mat(new_merchant_df, 'category_1', 'category_2')
-        new_merchant_df = pd.merge(new_merchant_df, svd_df_1, on=['category_1'], how='left')
-        svd_df_2 = calc_svd_mat(new_merchant_df, 'category_1', 'category_3')
-        new_merchant_df = pd.merge(new_merchant_df, svd_df_2, on=['category_1'], how='left')
-        svd_df_3 = calc_svd_mat(new_merchant_df, 'category_2', 'category_3')
-        new_merchant_df = pd.merge(new_merchant_df, svd_df_3, on=['category_2'], how='left')
 
         # datetime features
         new_merchant_df['purchase_date'] = pd.to_datetime(new_merchant_df['purchase_date'])
@@ -342,6 +354,8 @@ class New_merchant_transactions(Feature):
         new_merchant_df['new_purchase_date_uptonow'] = (datetime.datetime.today()-new_merchant_df['new_purchase_date_max']).dt.days
         new_merchant_df['new_purchase_date_uptomin'] = (datetime.datetime.today()-new_merchant_df['new_purchase_date_min']).dt.days
 
+        
+
         # memory usage削減
         #new_merchant_df = reduce_mem_usage(new_merchant_df)
 
@@ -432,7 +446,7 @@ class Additional_features(Feature):
         self.train = train_df
         self.test = test_df
 
-
+"""
 class decomposed_features(Feature):
     def create_features(self):
         train_df = feather.read_dataframe('../data/input/train.feather')
@@ -463,20 +477,55 @@ class decomposed_features(Feature):
 
         self.train = svd_train.reset_index(drop=True)
         self.test = svd_test.reset_index(drop=True)
+"""
+
+"""
+def calc_count_mat(df, feature_1, feature_2):
+    two_cols = df.loc[:,[feature_1,feature_2]]
+    feat2 = pd.get_dummies(two_cols[feature_2], sparse=True)
+    feat2.columns = ['{}_{}'.format(feature_2, f) for f in feat2.columns]
+    many_cols = pd.concat([two_cols, feat2], axis=1)
+    many_cols = many_cols.drop([feature_2], axis=1)
+    mat = many_cols.groupby([feature_1]).sum()  # 共起行列
+    mat.columns = ['{}_dm_{}'.format(feature_1, col) for col in mat.columns]
+    return mat
 
 
 def calc_svd_mat(df, feature_1, feature_2):
-    test = df.loc[:,[feature_1,feature_2]]
-    mat = pd.DataFrame(index=sorted(test[feature_1].unique()), columns=sorted(test[feature_2].unique()))
-    for i in test[feature_1].unique():
-        for j in test[feature_2].unique():
-            mat.loc[i, j] = len(test[(test[feature_1]==i)&(test[feature_2]==j)])
+    two_cols = df.loc[:,[feature_1,feature_2]]
+    feat2 = pd.get_dummies(two_cols[feature_2])
+    feat2.columns = ['{}_{}'.format(feature_2, f) for f in feat2.columns]
+    many_cols = pd.concat([two_cols, feat2], axis=1)
+    many_cols = many_cols.drop([feature_2], axis=1)
+    mat = many_cols.groupby([feature_1]).sum()  # 共起行列
     U, s, V = np.linalg.svd(mat, full_matrices=False)
-    svd_df = pd.DataFrame(U, index=sorted(test[feature_1].unique()))
-    svd_df.columns = ['{0}_{1}_{2}'.format(feature_1, feature_2, i) for i in svd_df.columns]
-    svd_df = svd_df.reset_index()
-    svd_df = svd_df.rename(columns={'index': feature_1})
+    svd_df = pd.DataFrame(U, index=mat.index)
+    svd_df.columns = ['{}_svd_{}'.format(feature_2, col) for col in svd_df.columns]
     return svd_df
+"""
+
+def feature_extraction(X):
+    if len(X.columns) >= 200:
+        num_features = 200
+    else:
+        num_features = len(X.columns)
+    model = NMF(n_components=num_features, init='random', random_state=0)
+    model.fit(X)
+    W = model.fit_transform(X)
+    return W
+
+
+def calc_nmf_mat(df, feature_1, feature_2):
+    two_cols = df.loc[:,[feature_1,feature_2]]
+    feat2 = pd.get_dummies(two_cols[feature_2], sparse=True)
+    feat2.columns = ['{}_{}'.format(feature_2, f) for f in feat2.columns]
+    many_cols = pd.concat([two_cols, feat2], axis=1)
+    many_cols = many_cols.drop([feature_2], axis=1)
+    mat = many_cols.groupby([feature_1]).sum()  # 共起行列
+    W = feature_extraction(mat)
+    nmf_df = pd.DataFrame(W, index=mat.index)
+    nmf_df.columns = ['{}_nmf_{}_{}'.format(feature_1, feature_2, col) for col in nmf_df.columns]
+    return nmf_df
 
 
 if __name__ == '__main__':

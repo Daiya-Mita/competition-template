@@ -14,8 +14,8 @@ from models.kfold_xgb import kfold_xgb
 from utils import load_datasets, removeMissingColumns, create_score_log, make_output_dir, save_importances, save2pkl  # , line_notify, submit, load_target
 
 # config
-create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
-is_debug = True  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
+create_features = True  # create_features.py を再実行する場合は True, そうでない場合は False
+is_debug = False  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
 use_GPU = False
 target_col = 'target'
 feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
@@ -47,8 +47,8 @@ path = cwd.replace(this_folder, '/features')
 train_df, test_df = load_datasets(path, is_debug)
 
 # 欠損値処理
-# train_df, test_df = removeMissingColumns(train_df, test_df, 0.5)
-# train_df = train_df.dropna(how='any')
+train_df, test_df = removeMissingColumns(train_df, test_df, 0.5)
+#train_df = train_df.dropna(how='any')
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
 # model
