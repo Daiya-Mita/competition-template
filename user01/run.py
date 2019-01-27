@@ -4,17 +4,18 @@ import logging
 # import argparse
 import subprocess
 import json
+import random
 import os
 import sys
 this_folder = '/user01'
 cwd = os.getcwd()
 sys.path.append(cwd.replace(this_folder, ''))
-from models.kfold_lgbm import kfold_lightgbm
+from models.kfold_lgbm import kfold_lightgbm, kfold_lightgbm_without_outliers
 from models.kfold_xgb import kfold_xgb
-from utils import load_datasets, removeMissingColumns, create_score_log, make_output_dir, save_importances, save2pkl  # , line_notify, submit, load_target
+from utils import load_datasets, removeMissingColumns, create_score_log, make_output_dir, save_importances, save2pkl, submit  # , line_notify, load_target
 
 # config
-create_features = True  # create_features.py を再実行する場合は True, そうでない場合は False
+create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
 is_debug = False  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
 use_GPU = False
 target_col = 'target'
@@ -24,6 +25,7 @@ feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
                   'Outlier_Likelyhood', 'OOF_PRED', 'outliers_pred', 'month_0']
 folds = 11 if not is_debug else 2  # is_debug が True なら2, そうでなければ11
 loss_type = 'rmse'
+competition_name = 'elo-merchant-category-recommendation'
 
 
 # start log
@@ -48,11 +50,25 @@ train_df, test_df = load_datasets(path, is_debug)
 
 # 欠損値処理
 train_df, test_df = removeMissingColumns(train_df, test_df, 0.5)
-#train_df = train_df.dropna(how='any')
+
+"""
+def get_subset(df, init_seed=0):
+    random.seed(init_seed)
+    tgt_index = list(df[df.loc[:,'outliers']==1].index)
+    other_index = list(df[df.loc[:,'outliers']==0].index)
+    tgt_cnpt_index = random.sample(other_index,len(tgt_index)*90)
+    train_index = tgt_index + tgt_cnpt_index
+    return df.loc[train_index,:]
+"""
+
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
 # model
-
+"""
+models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_lightgbm_without_outliers(
+    train_df, test_df, target_col=target_col, model_loss=loss_type,
+    num_folds=folds, feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
+"""
 models, model_params, feature_importance_df, train_preds, test_preds, scores, model_name = kfold_lightgbm(
     train_df, test_df, target_col=target_col, model_loss=loss_type,
     num_folds=folds, feats_exclude=feats_exclude, stratified=False, use_gpu=use_GPU)
@@ -80,8 +96,13 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
         '{}/importances.png'.format(folder_path),
         '{}/importance.csv'.format(folder_path))
     # 以下の部分はコンペごとに修正が必要
+
     test_df.loc[:, 'target'] = test_preds
     test_df = test_df.reset_index()
+    # targetが一定値以下のものをoutlierで埋める
+    #q = test_df['target'].quantile(.0003)
+    #q = 3
+    #test_df.loc[:,'target']=test_df['target'].apply(lambda x: x if abs(x) > q else x-0.0001)
     test_df[['card_id', 'target']].to_csv(
         '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score),
         index=False
@@ -91,5 +112,10 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
     train_df[['card_id', 'OOF_PRED']].to_csv(
         '{0}/oof.csv'.format(folder_path),
     )
+
+    # API経由でsubmit
+    #if not is_debug:
+    #    submission_file_name = '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score)
+    #    submit(competition_name, submission_file_name, comment='user02 cv: %.6f' % score)
 
 output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, now, model_name)

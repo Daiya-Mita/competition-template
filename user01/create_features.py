@@ -106,13 +106,13 @@ class Historical_transactions(Feature):
         #hist_df['category_3'] = hist_df['category_3'].map({'A':0, 'B':1, 'C':2, 'D':3})
 
         # SVD
-        svd_df_1 =  calc_nmf_mat(hist_df, 'card_id', 'city_id')
-        svd_df_2 =  calc_nmf_mat(hist_df, 'card_id', 'state_id')
-        svd_df_3 =  calc_nmf_mat(hist_df, 'card_id', 'subsector_id')
-        svd_df_4 =  calc_nmf_mat(hist_df, 'card_id', 'merchant_category_id')
-        svd_df_5 =  calc_nmf_mat(hist_df, 'card_id', 'installments')
-        svd_df_6 =  calc_nmf_mat(hist_df, 'card_id', 'category_3')
-        svd_df_7 =  calc_nmf_mat(hist_df, 'card_id', 'category_2')
+        nmf_df_1 =  calc_nmf_mat(hist_df, 'card_id', 'city_id')
+        nmf_df_2 =  calc_nmf_mat(hist_df, 'card_id', 'state_id')
+        nmf_df_3 =  calc_nmf_mat(hist_df, 'card_id', 'subsector_id')
+        nmf_df_4 =  calc_nmf_mat(hist_df, 'card_id', 'merchant_category_id')
+        nmf_df_5 =  calc_nmf_mat(hist_df, 'card_id', 'installments')
+        nmf_df_6 =  calc_nmf_mat(hist_df, 'card_id', 'category_3')
+        nmf_df_7 =  calc_nmf_mat(hist_df, 'card_id', 'category_2')
 
         # datetime features
         hist_df['purchase_date'] = pd.to_datetime(hist_df['purchase_date'])
@@ -212,13 +212,13 @@ class Historical_transactions(Feature):
         hist_df['hist_purchase_date_uptonow'] = (datetime.datetime.today()-hist_df['hist_purchase_date_max']).dt.days
         hist_df['hist_purchase_date_uptomin'] = (datetime.datetime.today()-hist_df['hist_purchase_date_min']).dt.days
 
-        hist_df = pd.merge(hist_df, svd_df_1, on=['card_id'], how='left')
-        hist_df = pd.merge(hist_df, svd_df_2, on=['card_id'], how='left')
-        hist_df = pd.merge(hist_df, svd_df_3, on=['card_id'], how='left')
-        hist_df = pd.merge(hist_df, svd_df_4, on=['card_id'], how='left')
-        hist_df = pd.merge(hist_df, svd_df_5, on=['card_id'], how='left')
-        hist_df = pd.merge(hist_df, svd_df_6, on=['card_id'], how='left')
-        hist_df = pd.merge(hist_df, svd_df_7, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_1, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_2, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_3, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_4, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_5, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_6, on=['card_id'], how='left')
+        hist_df = pd.merge(hist_df, nmf_df_7, on=['card_id'], how='left')
 
         #hist_df = hist_df.reset_index()
 
