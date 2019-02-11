@@ -1,7 +1,7 @@
 # import pandas as pd
 import datetime
 import logging
-# import argparse
+import argparse
 import subprocess
 import json
 import random
@@ -14,6 +14,7 @@ from models.kfold_lgbm import kfold_lightgbm, kfold_lightgbm_without_outliers
 from models.kfold_xgb import kfold_xgb
 from utils import load_datasets, removeMissingColumns, create_score_log, make_output_dir, save_importances, save2pkl, submit  # , line_notify, load_target
 
+
 # config
 create_features = False  # create_features.py を再実行する場合は True, そうでない場合は False
 is_debug = False  # True だと少数のデータで動かします, False だと全データを使います. また folds = 2 になります
@@ -25,16 +26,15 @@ feats_exclude = ['first_active_month', 'target', 'card_id', 'outliers',
                   'Outlier_Likelyhood', 'OOF_PRED', 'outliers_pred', 'month_0']
 folds = 11 if not is_debug else 2  # is_debug が True なら2, そうでなければ11
 loss_type = 'rmse'
-competition_name = 'elo-merchant-category-recommendation'
-
+# competition_name = 'elo-merchant-category-recommendation'
 
 # start log
 now = datetime.datetime.now()
 logging.basicConfig(
-    filename='../logs/log_{0:%Y-%m-%d-%H-%M-%S}.log'.format(now),
+    filename='../logs/log_{0:%Y-%m%d-%H%M-%S}.log'.format(now),
     level=logging.DEBUG
 )
-logging.debug('../logs/log_{0:%Y-%m-%d-%H-%M-%S}.log'.format(now))
+logging.debug('../logs/log_{0:%Y-%m%d-%H%M-%S}.log'.format(now))
 logging.debug('is_debug:{}'.format(is_debug))
 
 # create features
@@ -44,23 +44,19 @@ if create_features:
         print('ERROR: create_features.py')
         quit()
 
+# create_features.py された特徴量のリストを取得(今は使ってない)
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='features.json')
+options = parser.parse_args()
+feat_dict = json.load(open(options.config))
+use_features = feat_dict['features']
+
 # loading
 path = cwd.replace(this_folder, '/features')
 train_df, test_df = load_datasets(path, is_debug)
 
 # 欠損値処理
 train_df, test_df = removeMissingColumns(train_df, test_df, 0.5)
-
-"""
-def get_subset(df, init_seed=0):
-    random.seed(init_seed)
-    tgt_index = list(df[df.loc[:,'outliers']==1].index)
-    other_index = list(df[df.loc[:,'outliers']==0].index)
-    tgt_cnpt_index = random.sample(other_index,len(tgt_index)*90)
-    train_index = tgt_index + tgt_cnpt_index
-    return df.loc[train_index,:]
-"""
-
 logging.debug("Train shape: {}, test shape: {}".format(train_df.shape, test_df.shape))
 
 # model
@@ -104,7 +100,7 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
     #q = 3
     #test_df.loc[:,'target']=test_df['target'].apply(lambda x: x if abs(x) > q else x-0.0001)
     test_df[['card_id', 'target']].to_csv(
-        '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score),
+        '{0}/submit_{1:%Y-%m%d-%H%M-%S}_{2}.csv'.format(folder_path, now, score),
         index=False
     )
     train_df.loc[:, 'OOF_PRED'] = train_preds
@@ -112,10 +108,5 @@ def output(train_df, test_df, models, model_params, feature_importance_df, train
     train_df[['card_id', 'OOF_PRED']].to_csv(
         '{0}/oof.csv'.format(folder_path),
     )
-
-    # API経由でsubmit
-    #if not is_debug:
-    #    submission_file_name = '{0}/submit_{1:%Y-%m-%d-%H-%M-%S}_{2}.csv'.format(folder_path, now, score)
-    #    submit(competition_name, submission_file_name, comment='user02 cv: %.6f' % score)
 
 output(train_df, test_df, models, model_params, feature_importance_df, train_preds, test_preds, scores, now, model_name)

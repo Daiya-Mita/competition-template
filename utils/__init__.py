@@ -213,10 +213,10 @@ def make_output_dir(score, now, model_name):
         if os.path.isdir(path + x):
             folders.append(x)
     if folders == []:
-        folder_name = '/001_{0}_{1:%Y-%m-%d-%H-%M-%S}_{2}'.format(model_name, now, score)
+        folder_name = '/001_{0:%Y-%m%d-%H%M-%S}_{1}_{2}'.format(now, score, model_name)
     else:
         max_folder_num = max(int(f[:3]) for f in folders)
-        folder_name = '/{0:0=3}_{1}_{2:%Y-%m-%d-%H-%M-%S}_{3}'.format(max_folder_num+1, model_name, now, score)
+        folder_name = '/{0:0=3}_{1:%Y-%m%d-%H%M-%S}_{2}_{3}'.format(max_folder_num+1, now, score, model_name)
     os.mkdir(path + folder_name)
     return path + folder_name
 
